@@ -18,30 +18,35 @@ export default function LiveTracking() {
     enabled: !!id,
     refetchInterval: 10000,
   });
-  // Simulated moving collector
   const [collectorPos, setCollectorPos] = useState<[number, number] | null>(null);
   useEffect(() => {
     if (request && !collectorPos) {
-      // Start collector a bit away from destination
       setCollectorPos([request.location.lat + 0.005, request.location.lng + 0.005]);
     }
-  }, [request]);
+  }, [request, collectorPos]);
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
     if (collectorPos && request) {
-      const interval = setInterval(() => {
+      interval = setInterval(() => {
         setCollectorPos(current => {
           if (!current) return null;
           const [lat, lng] = current;
           const targetLat = request.location.lat;
           const targetLng = request.location.lng;
-          // Move 10% closer to target each step
-          const nextLat = lat + (targetLat - lat) * 0.1;
-          const nextLng = lng + (targetLng - lng) * 0.1;
+          const latDiff = targetLat - lat;
+          const lngDiff = targetLng - lng;
+          if (Math.abs(latDiff) < 0.0001 && Math.abs(lngDiff) < 0.0001) {
+            return [targetLat, targetLng];
+          }
+          const nextLat = lat + latDiff * 0.1;
+          const nextLng = lng + lngDiff * 0.1;
           return [nextLat, nextLng];
         });
       }, 3000);
-      return () => clearInterval(interval);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [collectorPos, request]);
   const markers = useMemo(() => {
     if (!request || !collectorPos) return [];
@@ -59,7 +64,7 @@ export default function LiveTracking() {
     ];
   }, [request, collectorPos]);
   if (isLoading) return <AppLayout container><Skeleton className="h-[600px] w-full rounded-2xl" /></AppLayout>;
-  if (!request) return <AppLayout container>Request not found</AppLayout>;
+  if (!request) return <AppLayout container><div className="text-center py-20">Request not found</div></AppLayout>;
   return (
     <AppLayout className="flex flex-col h-screen overflow-hidden">
       <div className="absolute top-16 left-4 z-[1000]">

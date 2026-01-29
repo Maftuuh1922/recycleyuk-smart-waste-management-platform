@@ -75,7 +75,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
     form.setValue('lat', latlng.lat);
     form.setValue('lng', latlng.lng);
   }, [form]);
-  async function onSubmit(values: FormValues) {
+  const handleFormSubmit = async (values: FormValues) => {
     try {
       await api('/api/requests', {
         method: 'POST',
@@ -98,7 +98,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
     } catch (error) {
       toast.error("Failed to submit request.");
     }
-  }
+  };
   const mapCenter: [number, number] = useMemo(() => [watchedLat, watchedLng], [watchedLat, watchedLng]);
   const mapMarkers = useMemo(() => [{
     position: mapCenter,
@@ -115,7 +115,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
                 control={form.control}

@@ -4,11 +4,12 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { api } from '@/lib/api-client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import { Recycle, Users, Activity, TrendingUp, Search, MoreVertical, BadgeCheck, ShieldAlert } from 'lucide-react';
+import { Recycle, Users, Activity, TrendingUp, Search, MoreVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,39 +20,37 @@ export default function AdminCenter() {
     queryKey: ['admin-stats'],
     queryFn: () => api<any>('/api/admin/stats'),
   });
-  const { data: usersData } = useQuery({
+  const { data: usersData, isLoading: usersLoading } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: () => api<User[]>('/api/requests').then(() => api<User[]>('/api/users/list')), // Assuming endpoint exists or mock list
+    queryFn: () => api<User[]>('/api/users/list'),
     initialData: [] as User[]
   });
   const wasteData = stats?.wasteDistribution || [
-    { name: 'Organic', value: 400 },
-    { name: 'Non-Organic', value: 300 },
-    { name: 'Hazardous', value: 100 },
-    { name: 'Residue', value: 200 },
+    { name: 'Organic', value: 0 },
+    { name: 'Non-Organic', value: 0 },
+    { name: 'Hazardous', value: 0 },
+    { name: 'Residue', value: 0 },
   ];
   const weeklyData = [
     { day: 'Mon', count: 12 }, { day: 'Tue', count: 19 }, { day: 'Wed', count: 15 },
     { day: 'Thu', count: 22 }, { day: 'Fri', count: 30 }, { day: 'Sat', count: 28 }, { day: 'Sun', count: 10 },
   ];
   const COLORS = ['#10b981', '#3b82f6', '#ef4444', '#71717a'];
-  const filteredUsers = usersData.filter(u => 
-    u.name.toLowerCase().includes(search.toLowerCase()) || 
+  const filteredUsers = usersData.filter(u =>
+    u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.role.toLowerCase().includes(search.toLowerCase())
   );
   return (
     <AppLayout container>
       <div className="space-y-8">
-        <header className="flex justify-between items-end">
-          <div>
-            <h1 className="text-3xl font-bold">Community Command Center</h1>
-            <p className="text-muted-foreground">Monitoring environmental impact for RW 04.</p>
-          </div>
+        <header>
+          <h1 className="text-3xl font-bold">Community Command Center</h1>
+          <p className="text-muted-foreground">Monitoring environmental impact for RW 04.</p>
         </header>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Total Users" value="248" delta="+12%" icon={<Users className="text-blue-500" />} />
-          <StatCard title="Total Pickups" value="1,240" delta="+5%" icon={<Recycle className="text-emerald-500" />} />
-          <StatCard title="Active TPU" value="8" delta="Stable" icon={<Activity className="text-amber-500" />} />
+          <StatCard title="Total Users" value={usersData.length.toString()} delta="+12%" icon={<Users className="text-blue-500" />} />
+          <StatCard title="Total Pickups" value={stats?.totalCount?.toString() || "0"} delta="+5%" icon={<Recycle className="text-emerald-500" />} />
+          <StatCard title="Active TPU" value={stats?.onlineCollectors?.toString() || "0"} delta="Stable" icon={<Activity className="text-amber-500" />} />
           <StatCard title="Total Weight" value="4.2 Tons" delta="+8%" icon={<TrendingUp className="text-purple-500" />} />
         </div>
         <Tabs defaultValue="analytics" className="w-full">
@@ -115,19 +114,29 @@ export default function AdminCenter() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
+                <div className="rounded-md border overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b bg-muted/50 text-left font-medium">
-                        <th className="p-4">Name</th>
-                        <th className="p-4">Role</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4">Address</th>
-                        <th className="p-4"></th>
+                        <th className="p-4 whitespace-nowrap">Name</th>
+                        <th className="p-4 whitespace-nowrap">Role</th>
+                        <th className="p-4 whitespace-nowrap">Status</th>
+                        <th className="p-4 whitespace-nowrap">Address</th>
+                        <th className="p-4 w-10"></th>
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredUsers.length > 0 ? filteredUsers.map(user => (
+                      {usersLoading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                          <tr key={i} className="border-b">
+                            <td className="p-4"><Skeleton className="h-4 w-32" /></td>
+                            <td className="p-4"><Skeleton className="h-4 w-16" /></td>
+                            <td className="p-4"><Skeleton className="h-4 w-12" /></td>
+                            <td className="p-4"><Skeleton className="h-4 w-48" /></td>
+                            <td className="p-4"><Skeleton className="h-8 w-8 rounded-full" /></td>
+                          </tr>
+                        ))
+                      ) : filteredUsers.length > 0 ? filteredUsers.map(user => (
                         <tr key={user.id} className="border-b hover:bg-muted/30 transition-colors">
                           <td className="p-4 font-medium">{user.name}</td>
                           <td className="p-4">

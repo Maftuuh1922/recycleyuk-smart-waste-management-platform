@@ -10,6 +10,11 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (!await user.exists()) return bad(c, "User not found");
     return ok(c, await user.getState());
   });
+  app.get('/api/users/list', async (c) => {
+    await UserEntity.ensureSeed(c.env);
+    const { items } = await UserEntity.list(c.env);
+    return ok(c, items);
+  });
   app.patch('/api/users/:id/status', async (c) => {
     const { isOnline } = (await c.req.json()) as { isOnline: boolean };
     const user = new UserEntity(c.env, c.req.param('id'));
@@ -26,7 +31,6 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (role === 'WARGA' && userId) {
       filtered = items.filter(r => r.userId === userId);
     } else if (role === 'TPU') {
-      // Collectors see all PENDING or their own assigned tasks
       filtered = items.filter(r => r.status === 'PENDING' || r.collectorId === userId);
     }
     return ok(c, filtered.sort((a, b) => b.createdAt - a.createdAt));
@@ -65,11 +69,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       updatedAt: Date.now(),
       completedAt: status === 'COMPLETED' ? Date.now() : s.completedAt
     }));
-    // Mock WhatsApp Notification Payloads
-    console.log(`[WHATSAPP MOCK] Template: Status Update`);
-    console.log(`[WHATSAPP MOCK] Request ID: ${updated.id}`);
-    console.log(`[WHATSAPP MOCK] New Status: ${status}`);
-    console.log(`[WHATSAPP MOCK] Recipient: Resident ID ${updated.userId}`);
+    console.log(`[WHATSAPP MOCK] Status Update: ${status} for Request ${updated.id}`);
     return ok(c, updated);
   });
   app.get('/api/admin/stats', async (c) => {
@@ -81,10 +81,10 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       { name: 'B3', value: requests.filter(r => r.wasteType === 'B3').length },
       { name: 'Residue', value: requests.filter(r => r.wasteType === 'RESIDUE').length },
     ];
-    return ok(c, { 
-      wasteDistribution: distribution, 
+    return ok(c, {
+      wasteDistribution: distribution,
       totalCount: requests.length,
-      onlineCollectors: users.filter(u => u.role === 'TPU' && u.isOnline).length 
+      onlineCollectors: users.filter(u => u.role === 'TPU' && u.isOnline).length
     });
   });
 }
