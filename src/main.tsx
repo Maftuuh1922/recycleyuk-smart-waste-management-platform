@@ -6,6 +6,7 @@ import { createRoot } from 'react-dom/client'
 import {
   createBrowserRouter,
   RouterProvider,
+  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -45,6 +46,11 @@ const router = createBrowserRouter([
   {
     path: "/workspace",
     element: <TpuWorkspace />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/tracking",
+    element: <Navigate to="/tracking/req-2" replace />,
     errorElement: <RouteErrorBoundary />,
   },
   {

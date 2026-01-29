@@ -35,9 +35,9 @@ export default function TpuWorkspace() {
         method: 'PATCH',
         body: JSON.stringify({ status })
       }),
-    onSuccess: (data: any) => {
+    onSuccess: (_data: any, variables: { id: string, status: string }) => {
       queryClient.invalidateQueries({ queryKey: ['tpu-jobs'] });
-      toast.success(`Status updated to ${data.status}`);
+      toast.success(`Status updated to ${variables.status}`);
     }
   });
   const simulateMovement = useMutation({
@@ -61,7 +61,7 @@ export default function TpuWorkspace() {
       simulateMovement.mutate(otwJob.id);
     }, 5000);
     return () => clearInterval(interval);
-  }, [myTasks, user?.id]);
+  }, [myTasks, simulateMovement, user?.id]);
   return (
     <AppLayout container>
       <div className="space-y-8">
@@ -134,7 +134,15 @@ export default function TpuWorkspace() {
                           <CheckCircle className="mr-2 h-4 w-4" /> Finish
                         </Button>
                       )}
-                      <Button variant="ghost" className="w-full" onClick={() => window.open(`https://www.google.com/maps?q=${req.location.lat},${req.location.lng}`)}>
+                      <Button 
+                        variant="ghost" 
+                        className="w-full" 
+                        onClick={() => {
+                          if (req.location?.lat && req.location?.lng) {
+                            window.open(`https://www.google.com/maps?q=${req.location.lat},${req.location.lng}`);
+                          }
+                        }}
+                      >
                         Nav
                       </Button>
                     </div>
