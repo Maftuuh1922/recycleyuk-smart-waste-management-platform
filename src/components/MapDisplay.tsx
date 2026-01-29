@@ -1,21 +1,26 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
-import { Truck, Home, MapPin } from 'lucide-react';
+import { Truck, Home, MapPin, Leaf, Package, AlertTriangle, Trash2 } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { WasteType } from '@shared/types';
 interface MapDisplayProps {
   center: [number, number];
   zoom?: number;
   markers?: Array<{
     position: [number, number];
     label: string;
-    type: 'COLLECTOR' | 'DESTINATION' | 'DEFAULT';
+    type?: 'COLLECTOR' | 'DESTINATION' | 'DEFAULT';
+    wasteType?: WasteType;
+    onClick?: () => void;
   }>;
+  onClick?: (latlng: { lat: number, lng: number }) => void;
   className?: string;
+  interactive?: boolean;
 }
-const createIcon = (IconComponent: any, color: string) => {
+const createIcon = (IconComponent: any, colorClass: string) => {
   const html = renderToStaticMarkup(
-    <div className={`p-2 rounded-full bg-white border-2 border-${color}-500 text-${color}-600 shadow-md`}>
+    <div className={`p-2 rounded-full bg-white border-2 shadow-md flex items-center justify-center`} style={{ borderColor: colorClass, color: colorClass }}>
       <IconComponent size={20} />
     </div>
   );
@@ -26,6 +31,24 @@ const createIcon = (IconComponent: any, color: string) => {
     iconAnchor: [18, 18],
   });
 };
+const getWasteColor = (type?: WasteType) => {
+  switch (type) {
+    case 'ORGANIC': return '#10b981'; // Emerald
+    case 'NON_ORGANIC': return '#3b82f6'; // Blue
+    case 'B3': return '#ef4444'; // Red
+    case 'RESIDUE': return '#71717a'; // Zinc
+    default: return '#10b981';
+  }
+};
+const getWasteIcon = (type?: WasteType) => {
+  switch (type) {
+    case 'ORGANIC': return Leaf;
+    case 'NON_ORGANIC': return Package;
+    case 'B3': return AlertTriangle;
+    case 'RESIDUE': return Trash2;
+    default: return MapPin;
+  }
+};
 const RecenterMap = ({ center, zoom }: { center: [number, number], zoom: number }) => {
   const map = useMap();
   useEffect(() => {
@@ -33,13 +56,22 @@ const RecenterMap = ({ center, zoom }: { center: [number, number], zoom: number 
   }, [center, zoom, map]);
   return null;
 };
-export function MapDisplay({ center, zoom = 15, markers = [], className }: MapDisplayProps) {
+const MapClickHandler = ({ onClick }: { onClick?: (latlng: { lat: number, lng: number }) => void }) => {
+  useMapEvents({
+    click(e) {
+      onClick?.(e.latlng);
+    },
+  });
+  return null;
+};
+export function MapDisplay({ center, zoom = 15, markers = [], onClick, className, interactive = true }: MapDisplayProps) {
   return (
     <div className={`relative w-full h-full min-h-[300px] rounded-xl overflow-hidden border bg-muted ${className}`}>
-      <MapContainer 
-        center={center} 
-        zoom={zoom} 
-        scrollWheelZoom={false}
+      <MapContainer
+        center={center}
+        zoom={zoom}
+        scrollWheelZoom={interactive}
+        dragging={interactive}
         className="h-full w-full"
       >
         <TileLayer
@@ -47,13 +79,25 @@ export function MapDisplay({ center, zoom = 15, markers = [], className }: MapDi
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <RecenterMap center={center} zoom={zoom} />
+        <MapClickHandler onClick={onClick} />
         {markers.map((marker, idx) => {
           let icon;
-          if (marker.type === 'COLLECTOR') icon = createIcon(Truck, 'emerald');
-          else if (marker.type === 'DESTINATION') icon = createIcon(Home, 'blue');
-          else icon = createIcon(MapPin, 'zinc');
+          if (marker.type === 'COLLECTOR') icon = createIcon(Truck, '#10b981');
+          else if (marker.type === 'DESTINATION') icon = createIcon(Home, '#3b82f6');
+          else {
+            const wasteIcon = getWasteIcon(marker.wasteType);
+            const wasteColor = getWasteColor(marker.wasteType);
+            icon = createIcon(wasteIcon, wasteColor);
+          }
           return (
-            <Marker key={idx} position={marker.position} icon={icon}>
+            <Marker 
+              key={`${idx}-${marker.position[0]}`} 
+              position={marker.position} 
+              icon={icon}
+              eventHandlers={{
+                click: () => marker.onClick?.()
+              }}
+            >
               <Popup>{marker.label}</Popup>
             </Marker>
           );

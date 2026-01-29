@@ -6,7 +6,6 @@ import { createRoot } from 'react-dom/client'
 import {
   createBrowserRouter,
   RouterProvider,
-  Navigate,
 } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -16,7 +15,8 @@ import { HomePage } from '@/pages/HomePage'
 import { AuthPage } from '@/pages/AuthPage'
 import WargaDashboard from '@/pages/WargaDashboard'
 import TpuWorkspace from '@/pages/TpuWorkspace'
-import LiveTracking from '@/pages/LiveTracking'
+import TpuMap from '@/pages/TpuMap'
+import RequestDetail from '@/pages/RequestDetail'
 import AdminCenter from '@/pages/AdminCenter'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
@@ -45,18 +45,23 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    path: "/history",
+    element: <WargaDashboard />, // Reusing dashboard filtered logic for now
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/workspace",
     element: <TpuWorkspace />,
     errorElement: <RouteErrorBoundary />,
   },
   {
-    path: "/tracking",
-    element: <Navigate to="/tracking/req-2" replace />,
+    path: "/tpu/map",
+    element: <TpuMap />,
     errorElement: <RouteErrorBoundary />,
   },
   {
-    path: "/tracking/:id",
-    element: <LiveTracking />,
+    path: "/request/:id",
+    element: <RequestDetail />,
     errorElement: <RouteErrorBoundary />,
   },
   {

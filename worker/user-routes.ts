@@ -1,17 +1,22 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, RequestEntity, TrackingEntity } from "./entities";
-import { ok, bad, notFound, isStr } from './core-utils';
-import type { Request as WasteRequest, UserRole, TrackingUpdate } from "@shared/types";
+import { UserEntity, RequestEntity } from "./entities";
+import { ok, bad, notFound } from './core-utils';
+import type { Request as WasteRequest, UserRole } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
-  // AUTH MOCK
   app.post('/api/auth/login', async (c) => {
     const { id } = (await c.req.json()) as { id: string };
     const user = new UserEntity(c.env, id);
     if (!await user.exists()) return bad(c, "User not found");
     return ok(c, await user.getState());
   });
-  // REQUESTS
+  app.patch('/api/users/:id/status', async (c) => {
+    const { isOnline } = (await c.req.json()) as { isOnline: boolean };
+    const user = new UserEntity(c.env, c.req.param('id'));
+    if (!await user.exists()) return notFound(c);
+    const updated = await user.mutate(s => ({ ...s, isOnline }));
+    return ok(c, updated);
+  });
   app.get('/api/requests', async (c) => {
     await RequestEntity.ensureSeed(c.env);
     const userId = c.req.query('userId');
@@ -21,6 +26,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     if (role === 'WARGA' && userId) {
       filtered = items.filter(r => r.userId === userId);
     } else if (role === 'TPU') {
+      // Collectors see all PENDING or their own assigned tasks
       filtered = items.filter(r => r.status === 'PENDING' || r.collectorId === userId);
     }
     return ok(c, filtered.sort((a, b) => b.createdAt - a.createdAt));
@@ -35,6 +41,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       wasteType: body.wasteType as any,
       weightEstimate: body.weightEstimate || 0,
       location: body.location || { lat: -6.2247, lng: 106.8077, address: "RW 04 Area" },
+      photos: body.photos || [],
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -47,47 +54,37 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     return ok(c, await req.getState());
   });
   app.patch('/api/requests/:id/status', async (c) => {
-    const { status, collectorId } = (await c.req.json()) as { status: string, collectorId?: string };
+    const { status, collectorId, proofPhoto } = (await c.req.json()) as { status: string, collectorId?: string, proofPhoto?: string };
     const req = new RequestEntity(c.env, c.req.param('id'));
     if (!await req.exists()) return notFound(c);
     const updated = await req.mutate(s => ({
       ...s,
       status: status as any,
       collectorId: collectorId || s.collectorId,
+      proofPhoto: proofPhoto || s.proofPhoto,
       updatedAt: Date.now(),
       completedAt: status === 'COMPLETED' ? Date.now() : s.completedAt
     }));
+    // Mock WhatsApp Notification Payloads
+    console.log(`[WHATSAPP MOCK] Template: Status Update`);
+    console.log(`[WHATSAPP MOCK] Request ID: ${updated.id}`);
+    console.log(`[WHATSAPP MOCK] New Status: ${status}`);
+    console.log(`[WHATSAPP MOCK] Recipient: Resident ID ${updated.userId}`);
     return ok(c, updated);
   });
-  // TRACKING
-  app.get('/api/requests/:id/tracking', async (c) => {
-    const { items } = await TrackingEntity.list(c.env);
-    const filtered = items.filter(t => t.requestId === c.req.param('id'))
-      .sort((a, b) => a.timestamp - b.timestamp);
-    return ok(c, filtered);
-  });
-  app.post('/api/requests/:id/tracking', async (c) => {
-    const body = await c.req.json();
-    const update: TrackingUpdate = {
-      id: crypto.randomUUID(),
-      requestId: c.req.param('id'),
-      collectorId: body.collectorId,
-      lat: body.lat,
-      lng: body.lng,
-      timestamp: Date.now(),
-    };
-    await TrackingEntity.create(c.env, update);
-    return ok(c, update);
-  });
-  // ADMIN
   app.get('/api/admin/stats', async (c) => {
     const { items: requests } = await RequestEntity.list(c.env);
+    const { items: users } = await UserEntity.list(c.env);
     const distribution = [
       { name: 'Organic', value: requests.filter(r => r.wasteType === 'ORGANIC').length },
       { name: 'Non-Organic', value: requests.filter(r => r.wasteType === 'NON_ORGANIC').length },
       { name: 'B3', value: requests.filter(r => r.wasteType === 'B3').length },
       { name: 'Residue', value: requests.filter(r => r.wasteType === 'RESIDUE').length },
     ];
-    return ok(c, { wasteDistribution: distribution, totalCount: requests.length });
+    return ok(c, { 
+      wasteDistribution: distribution, 
+      totalCount: requests.length,
+      onlineCollectors: users.filter(u => u.role === 'TPU' && u.isOnline).length 
+    });
   });
 }

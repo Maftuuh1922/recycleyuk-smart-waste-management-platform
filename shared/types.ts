@@ -1,5 +1,5 @@
 export type UserRole = 'WARGA' | 'TPU' | 'ADMIN';
-export type RequestStatus = 'PENDING' | 'ACCEPTED' | 'ON_THE_WAY' | 'ARRIVED' | 'COLLECTING' | 'COMPLETED' | 'CANCELLED';
+export type RequestStatus = 'PENDING' | 'ACCEPTED' | 'ON_THE_WAY' | 'ARRIVED' | 'COLLECTING' | 'COMPLETED' | 'VALIDATED' | 'CANCELLED';
 export type WasteType = 'ORGANIC' | 'NON_ORGANIC' | 'B3' | 'RESIDUE';
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -12,6 +12,7 @@ export interface User {
   role: UserRole;
   phone?: string;
   address?: string;
+  isOnline?: boolean;
 }
 export interface Request {
   id: string;
@@ -25,27 +26,21 @@ export interface Request {
     lng: number;
     address: string;
   };
+  photos: string[];
+  proofPhoto?: string;
+  estimatedArrival?: string;
   createdAt: number;
   updatedAt: number;
   completedAt?: number;
-}
-export interface TrackingUpdate {
-  id: string; // Added to satisfy IndexedEntity constraint
-  requestId: string;
-  collectorId: string;
-  lat: number;
-  lng: number;
-  timestamp: number;
 }
 export interface Notification {
   id: string;
   userId: string;
   title: string;
   message: string;
-  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT'; // Added for categorization
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT';
   read: boolean;
   createdAt: number;
 }
-// For existing template compatibility
 export interface Chat { id: string; title: string; }
 export interface ChatMessage { id: string; chatId: string; userId: string; text: string; ts: number; }

@@ -1,15 +1,14 @@
 import React from "react";
-import { 
-  LayoutDashboard, 
-  Truck, 
-  History, 
-  PlusCircle, 
-  BarChart3, 
-  Users, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Truck,
+  History,
+  PlusCircle,
+  BarChart3,
+  Users,
+  LogOut,
   Recycle,
-  MapPin
+  Map as MapIcon
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/lib/store";
@@ -37,22 +36,19 @@ export function AppSidebar(): JSX.Element {
     if (user?.role === 'WARGA') {
       return [
         { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
-        { title: "New Pickup", icon: PlusCircle, url: "/dashboard", action: "NEW_REQUEST" },
-        { title: "History", icon: History, url: "/dashboard" },
-        { title: "Tracking", icon: MapPin, url: "/tracking" },
+        { title: "History", icon: History, url: "/history" },
       ];
     }
     if (user?.role === 'TPU') {
       return [
-        { title: "Job Board", icon: Truck, url: "/workspace" },
-        { title: "My Tasks", icon: History, url: "/workspace" },
+        { title: "Job Map", icon: MapIcon, url: "/tpu/map" },
+        { title: "Active Tasks", icon: Truck, url: "/workspace" },
         { title: "Earnings", icon: BarChart3, url: "/workspace" },
       ];
     }
     return [
       { title: "Command Center", icon: BarChart3, url: "/admin" },
       { title: "Users", icon: Users, url: "/admin" },
-      { title: "Logs", icon: History, url: "/admin" },
     ];
   };
   const menuItems = getMenuItems();
@@ -65,7 +61,7 @@ export function AppSidebar(): JSX.Element {
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold leading-none">RecycleYuk</span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mt-1">Logistics Platform</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mt-1">Logistics</span>
           </div>
         </div>
       </SidebarHeader>
@@ -93,7 +89,7 @@ export function AppSidebar(): JSX.Element {
             <span className="text-xs font-medium truncate max-w-[120px]">{user?.name}</span>
             <span className="text-[10px] text-muted-foreground uppercase">{user?.role}</span>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
