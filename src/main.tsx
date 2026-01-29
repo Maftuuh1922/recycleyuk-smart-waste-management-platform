@@ -13,7 +13,17 @@ import { RouteErrorBoundary } from '@/components/RouteErrorBoundary';
 import '@/index.css'
 import { HomePage } from '@/pages/HomePage'
 import { AuthPage } from '@/pages/AuthPage'
-const queryClient = new QueryClient();
+import WargaDashboard from '@/pages/WargaDashboard'
+import TpuWorkspace from '@/pages/TpuWorkspace'
+import { Toaster } from '@/components/ui/sonner'
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 const router = createBrowserRouter([
   {
     path: "/",
@@ -25,15 +35,14 @@ const router = createBrowserRouter([
     element: <AuthPage />,
     errorElement: <RouteErrorBoundary />,
   },
-  // Placeholders for next phases
   {
     path: "/dashboard",
-    element: <div className="p-8">Warga Dashboard Placeholder</div>,
+    element: <WargaDashboard />,
     errorElement: <RouteErrorBoundary />,
   },
   {
     path: "/workspace",
-    element: <div className="p-8">TPU Workspace Placeholder</div>,
+    element: <TpuWorkspace />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -47,6 +56,7 @@ createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <ErrorBoundary>
         <RouterProvider router={router} />
+        <Toaster />
       </ErrorBoundary>
     </QueryClientProvider>
   </StrictMode>,

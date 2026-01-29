@@ -30,6 +30,7 @@ export interface Request {
   completedAt?: number;
 }
 export interface TrackingUpdate {
+  id: string; // Added to satisfy IndexedEntity constraint
   requestId: string;
   collectorId: string;
   lat: number;
@@ -41,6 +42,7 @@ export interface Notification {
   userId: string;
   title: string;
   message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ALERT'; // Added for categorization
   read: boolean;
   createdAt: number;
 }

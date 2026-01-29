@@ -1,6 +1,18 @@
-/* This is a demo sidebar. **COMPULSORY** Edit this file to customize the sidebar OR remove it from appLayout OR don't use appLayout at all */
 import React from "react";
-import { Home, Layers, Compass, Star, Settings, LifeBuoy } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  Truck, 
+  History, 
+  PlusCircle, 
+  BarChart3, 
+  Users, 
+  Settings, 
+  LogOut, 
+  Recycle,
+  MapPin
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuthStore } from "@/lib/store";
 import {
   Sidebar,
   SidebarContent,
@@ -8,65 +20,86 @@ import {
   SidebarGroup,
   SidebarHeader,
   SidebarSeparator,
-  SidebarInput,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuAction,
-  SidebarMenuBadge,
 } from "@/components/ui/sidebar";
-
 export function AppSidebar(): JSX.Element {
+  const user = useAuthStore(s => s.user);
+  const logout = useAuthStore(s => s.logout);
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+  const getMenuItems = () => {
+    if (user?.role === 'WARGA') {
+      return [
+        { title: "Dashboard", icon: LayoutDashboard, url: "/dashboard" },
+        { title: "New Pickup", icon: PlusCircle, url: "/dashboard", action: "NEW_REQUEST" },
+        { title: "History", icon: History, url: "/dashboard" },
+        { title: "Tracking", icon: MapPin, url: "/tracking" },
+      ];
+    }
+    if (user?.role === 'TPU') {
+      return [
+        { title: "Job Board", icon: Truck, url: "/workspace" },
+        { title: "My Tasks", icon: History, url: "/workspace" },
+        { title: "Earnings", icon: BarChart3, url: "/workspace" },
+      ];
+    }
+    return [
+      { title: "Command Center", icon: BarChart3, url: "/admin" },
+      { title: "Users", icon: Users, url: "/admin" },
+      { title: "Logs", icon: History, url: "/admin" },
+    ];
+  };
+  const menuItems = getMenuItems();
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <div className="h-6 w-6 rounded-md bg-gradient-to-br from-indigo-500 to-purple-500" />
-          <span className="text-sm font-medium">Demo Sidebar</span>
+        <div className="flex items-center gap-3 px-2 py-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white">
+            <Recycle className="h-5 w-5" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-sm font-bold leading-none">RecycleYuk</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-medium mt-1">Logistics Platform</span>
+          </div>
         </div>
-        <SidebarInput placeholder="Search" />
       </SidebarHeader>
+      <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
+          <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive>
-                <a href="#"><Home /> <span>Home</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Layers /> <span>Projects</span></a>
-              </SidebarMenuButton>
-              <SidebarMenuAction>
-                <Star className="size-4" />
-              </SidebarMenuAction>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Compass /> <span>Explore</span></a>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
-
-        <SidebarSeparator />
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Quick Links</SidebarGroupLabel>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <a href="#"><Star /> <span>Starred</span></a>
-              </SidebarMenuButton>
-              <SidebarMenuBadge>5</SidebarMenuBadge>
-            </SidebarMenuItem>
+            {menuItems.map((item) => (
+              <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild tooltip={item.title}>
+                  <Link to={item.url}>
+                    <item.icon className="h-4 w-4" />
+                    <span>{item.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            ))}
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="px-2 text-xs text-muted-foreground">A simple shadcn sidebar</div>
+      <SidebarFooter className="border-t p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium truncate max-w-[120px]">{user?.name}</span>
+            <span className="text-[10px] text-muted-foreground uppercase">{user?.role}</span>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );

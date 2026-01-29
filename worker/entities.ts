@@ -26,13 +26,13 @@ export class TrackingEntity extends IndexedEntity<TrackingUpdate> {
   static readonly entityName = "tracking";
   static readonly indexName = "tracking_logs";
   static readonly initialState: TrackingUpdate = {
+    id: "",
     requestId: "",
     collectorId: "",
     lat: 0,
     lng: 0,
     timestamp: 0
   };
-  // Tracking data usually doesn't need seeding
 }
 export class NotificationEntity extends IndexedEntity<Notification> {
   static readonly entityName = "notification";
@@ -42,6 +42,7 @@ export class NotificationEntity extends IndexedEntity<Notification> {
     userId: "",
     title: "",
     message: "",
+    type: 'INFO',
     read: false,
     createdAt: 0
   };
