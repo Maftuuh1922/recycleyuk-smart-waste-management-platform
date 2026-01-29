@@ -1,6 +1,6 @@
 # Cloudflare Workers Full-Stack Chat Demo
 
-[![Deploy to Cloudflare][cloudflarebutton]]
+[![Deploy to Cloudflare][![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Maftuuh1922/recycleyuk-smart-waste-management-platform)]
 
 A production-ready full-stack chat application built on Cloudflare Workers. Features a React frontend with shadcn/ui, Tailwind CSS, and a Hono backend powered by Durable Objects for scalable, multi-tenant entity storage (Users, Chats, Messages). Demonstrates real-time chat boards with CRUD operations, pagination, and indexing.
 
@@ -117,7 +117,7 @@ bun deploy
 
 Or use the button:
 
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Maftuuh1922/recycleyuk-smart-waste-management-platform)
 
 ### Manual Deployment Steps
 
