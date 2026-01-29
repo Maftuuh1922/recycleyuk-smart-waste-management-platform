@@ -29,14 +29,14 @@ const createIcon = (IconComponent: any, colorClass: string) => {
     className: 'custom-div-icon',
     iconSize: [36, 36],
     iconAnchor: [18, 18],
-  });
+  }) as L.DivIcon;
 };
 const getWasteColor = (type?: WasteType) => {
   switch (type) {
-    case 'ORGANIC': return '#10b981'; // Emerald
-    case 'NON_ORGANIC': return '#3b82f6'; // Blue
-    case 'B3': return '#ef4444'; // Red
-    case 'RESIDUE': return '#71717a'; // Zinc
+    case 'ORGANIC': return '#10b981';
+    case 'NON_ORGANIC': return '#3b82f6';
+    case 'B3': return '#ef4444';
+    case 'RESIDUE': return '#71717a';
     default: return '#10b981';
   }
 };
@@ -68,15 +68,19 @@ export function MapDisplay({ center, zoom = 15, markers = [], onClick, className
   return (
     <div className={`relative w-full h-full min-h-[300px] rounded-xl overflow-hidden border bg-muted ${className}`}>
       <MapContainer
-        center={center}
-        zoom={zoom}
-        scrollWheelZoom={interactive}
-        dragging={interactive}
-        className="h-full w-full"
+        {...({
+          center,
+          zoom,
+          scrollWheelZoom: interactive,
+          dragging: interactive,
+          className: "h-full w-full",
+        } as any)}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          {...({
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          } as any)}
         />
         <RecenterMap center={center} zoom={zoom} />
         <MapClickHandler onClick={onClick} />
@@ -90,13 +94,15 @@ export function MapDisplay({ center, zoom = 15, markers = [], onClick, className
             icon = createIcon(wasteIcon, wasteColor);
           }
           return (
-            <Marker 
-              key={`${idx}-${marker.position[0]}`} 
-              position={marker.position} 
-              icon={icon}
-              eventHandlers={{
-                click: () => marker.onClick?.()
-              }}
+            <Marker
+              {...({
+                key: `${idx}-${marker.position[0]}`,
+                position: marker.position,
+                icon: icon,
+                eventHandlers: {
+                  click: () => marker.onClick?.()
+                }
+              } as any)}
             >
               <Popup>{marker.label}</Popup>
             </Marker>

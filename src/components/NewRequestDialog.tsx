@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -58,6 +58,10 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
       lng: 106.8077,
     },
   });
+  // Watch values outside of JSX to avoid inline watch calls
+  const watchedLat = form.watch('lat');
+  const watchedLng = form.watch('lng');
+  const watchedWasteType = form.watch('wasteType');
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -92,6 +96,12 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
       toast.error("Failed to submit request.");
     }
   }
+  const mapCenter: [number, number] = useMemo(() => [watchedLat, watchedLng], [watchedLat, watchedLng]);
+  const mapMarkers = useMemo(() => [{
+    position: mapCenter,
+    label: "Pickup Location",
+    wasteType: watchedWasteType
+  }], [mapCenter, watchedWasteType]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
@@ -110,7 +120,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Waste Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select waste type" />
@@ -152,7 +162,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
                 {photos.map((photo, i) => (
                   <div key={i} className="relative w-20 h-20 rounded-md overflow-hidden border">
                     <img src={photo} alt="Waste preview" className="w-full h-full object-cover" />
-                    <button 
+                    <button
                       type="button"
                       onClick={() => removePhoto(i)}
                       className="absolute top-0 right-0 bg-red-500 text-white p-0.5"
@@ -173,14 +183,10 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
                 <MapPin className="h-4 w-4" /> Pick Location
               </FormLabel>
               <div className="h-48 border rounded-lg overflow-hidden">
-                <MapDisplay 
-                  center={[form.getValues('lat'), form.getValues('lng')]} 
+                <MapDisplay
+                  center={mapCenter}
                   zoom={16}
-                  markers={[{
-                    position: [form.watch('lat'), form.watch('lng')],
-                    label: "Pickup Location",
-                    wasteType: form.watch('wasteType')
-                  }]}
+                  markers={mapMarkers}
                   onClick={(latlng) => {
                     form.setValue('lat', latlng.lat);
                     form.setValue('lng', latlng.lng);

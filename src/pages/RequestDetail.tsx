@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { api } from '@/lib/api-client';
 import { Request, RequestStatus } from '@shared/types';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -29,7 +30,7 @@ export default function RequestDetail() {
     refetchInterval: 5000,
   });
   if (isLoading) return <AppLayout container><Skeleton className="h-[600px] w-full" /></AppLayout>;
-  if (!request) return <AppLayout container>Request not found</AppLayout>;
+  if (!request) return <AppLayout container><div className="text-center py-20">Request not found</div></AppLayout>;
   const currentIdx = STATUS_STEPS.findIndex(s => s.status === request.status);
   return (
     <AppLayout container>
@@ -59,8 +60,8 @@ export default function RequestDetail() {
                       <div className="flex flex-col items-center">
                         <div className={cn(
                           "w-8 h-8 rounded-full flex items-center justify-center border-2",
-                          isPast ? "bg-emerald-600 border-emerald-600 text-white" : 
-                          isCurrent ? "bg-emerald-100 border-emerald-600 text-emerald-600 animate-pulse" : 
+                          isPast ? "bg-emerald-600 border-emerald-600 text-white" :
+                          isCurrent ? "bg-emerald-100 border-emerald-600 text-emerald-600 animate-pulse" :
                           "bg-muted border-muted text-muted-foreground"
                         )}>
                           {isPast ? <CheckCircle2 size={16} /> : isCurrent ? <Clock size={16} /> : <Circle size={16} />}
@@ -105,9 +106,13 @@ export default function RequestDetail() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-2">
-                  {request.photos?.map((p, i) => (
-                    <img key={i} src={p} className="w-full aspect-square object-cover rounded-md border" />
-                  )) || <p className="text-xs text-muted-foreground">No photos</p>}
+                  {request.photos && request.photos.length > 0 ? (
+                    request.photos.map((p, i) => (
+                      <img key={i} src={p} className="w-full aspect-square object-cover rounded-md border" alt={`Waste ${i}`} />
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground col-span-2 italic">No photos attached</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
