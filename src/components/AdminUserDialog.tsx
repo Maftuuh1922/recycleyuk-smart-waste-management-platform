@@ -8,16 +8,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { User } from '@shared/types';
+import { User, UserRole } from '@shared/types';
 import { api } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
 const formSchema = z.object({
   id: z.string().min(1, "ID is required"),
   name: z.string().min(3, "Name must be at least 3 characters"),
-  role: z.enum(['WARGA', 'TPU', 'ADMIN']),
-  phone: z.string().optional(),
-  address: z.string().optional(),
+  role: z.enum(['WARGA', 'TPU', 'ADMIN'] as const),
+  phone: z.string().optional().default(''),
+  address: z.string().optional().default(''),
   isOnline: z.boolean().default(false),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -40,24 +40,26 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
     },
   });
   useEffect(() => {
-    if (user) {
-      form.reset({
-        id: user.id,
-        name: user.name,
-        role: user.role,
-        phone: user.phone || '',
-        address: user.address || '',
-        isOnline: user.isOnline || false,
-      });
-    } else {
-      form.reset({
-        id: `user-${Math.floor(Math.random() * 10000)}`,
-        name: '',
-        role: 'WARGA',
-        phone: '',
-        address: '',
-        isOnline: false,
-      });
+    if (open) {
+      if (user) {
+        form.reset({
+          id: user.id,
+          name: user.name,
+          role: user.role,
+          phone: user.phone || '',
+          address: user.address || '',
+          isOnline: !!user.isOnline,
+        });
+      } else {
+        form.reset({
+          id: `user-${Math.floor(Math.random() * 10000)}`,
+          name: '',
+          role: 'WARGA',
+          phone: '',
+          address: '',
+          isOnline: false,
+        });
+      }
     }
   }, [user, form, open]);
   const onSubmit = async (values: FormValues) => {
@@ -72,12 +74,13 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       onOpenChange(false);
     } catch (error) {
+      console.error(error);
       toast.error("Failed to save user");
     }
   };
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{user ? 'Edit Member' : 'Add New Member'}</DialogTitle>
         </DialogHeader>
@@ -126,12 +129,14 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
             )} />
             <FormField control={form.control} name="isOnline" render={({ field }) => (
               <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                <FormLabel>Online Status</FormLabel>
+                <FormLabel className="text-sm font-medium">Online Status</FormLabel>
                 <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
               </FormItem>
             )} />
-            <DialogFooter>
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700">Save User</Button>
+            <DialogFooter className="pt-4">
+              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Saving..." : "Save User"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>
