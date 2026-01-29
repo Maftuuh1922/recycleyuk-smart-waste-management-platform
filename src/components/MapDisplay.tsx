@@ -18,9 +18,9 @@ interface MapDisplayProps {
   className?: string;
   interactive?: boolean;
 }
-const createIcon = (IconComponent: any, colorClass: string) => {
+const createIcon = (IconComponent: any, colorClass: string, isPulse = false) => {
   const html = renderToStaticMarkup(
-    <div className={`p-2 rounded-full bg-white border-2 shadow-md flex items-center justify-center`} style={{ borderColor: colorClass, color: colorClass }}>
+    <div className={`p-2 rounded-full bg-white border-2 shadow-md flex items-center justify-center ${isPulse ? 'pulse-marker' : ''}`} style={{ borderColor: colorClass, color: colorClass }}>
       <IconComponent size={20} />
     </div>
   );
@@ -86,17 +86,20 @@ export function MapDisplay({ center, zoom = 15, markers = [], onClick, className
         <MapClickHandler onClick={onClick} />
         {markers.map((marker, idx) => {
           let icon;
-          if (marker.type === 'COLLECTOR') icon = createIcon(Truck, '#10b981');
-          else if (marker.type === 'DESTINATION') icon = createIcon(Home, '#3b82f6');
-          else {
+          const markerKey = `marker-${idx}-${marker.position[0]}-${marker.position[1]}`;
+          if (marker.type === 'COLLECTOR') {
+            icon = createIcon(Truck, '#10b981', true);
+          } else if (marker.type === 'DESTINATION') {
+            icon = createIcon(Home, '#3b82f6');
+          } else {
             const wasteIcon = getWasteIcon(marker.wasteType);
             const wasteColor = getWasteColor(marker.wasteType);
             icon = createIcon(wasteIcon, wasteColor);
           }
           return (
             <Marker
+              key={markerKey}
               {...({
-                key: `${idx}-${marker.position[0]}`,
                 position: marker.position,
                 icon: icon,
                 eventHandlers: {
