@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -58,20 +58,23 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
       lng: 106.8077,
     },
   });
-  // Watch values outside of JSX to avoid inline watch calls
   const watchedLat = form.watch('lat');
   const watchedLng = form.watch('lng');
   const watchedWasteType = form.watch('wasteType');
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       const newPhotos = filesArray.map(file => URL.createObjectURL(file));
       setPhotos(prev => [...prev, ...newPhotos]);
     }
-  };
-  const removePhoto = (index: number) => {
+  }, []);
+  const removePhoto = useCallback((index: number) => {
     setPhotos(prev => prev.filter((_, i) => i !== index));
-  };
+  }, []);
+  const handleMapClick = useCallback((latlng: { lat: number, lng: number }) => {
+    form.setValue('lat', latlng.lat);
+    form.setValue('lng', latlng.lng);
+  }, [form]);
   async function onSubmit(values: FormValues) {
     try {
       await api('/api/requests', {
@@ -187,10 +190,7 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
                   center={mapCenter}
                   zoom={16}
                   markers={mapMarkers}
-                  onClick={(latlng) => {
-                    form.setValue('lat', latlng.lat);
-                    form.setValue('lng', latlng.lng);
-                  }}
+                  onClick={handleMapClick}
                 />
               </div>
               <FormField

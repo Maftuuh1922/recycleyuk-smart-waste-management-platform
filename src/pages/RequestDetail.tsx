@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle2, Circle, Clock, ChevronLeft, MapPin, Send } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { CheckCircle2, Circle, Clock, ChevronLeft, MapPin, Send, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 const STATUS_STEPS: { status: RequestStatus; label: string; desc: string }[] = [
@@ -19,59 +20,72 @@ const STATUS_STEPS: { status: RequestStatus; label: string; desc: string }[] = [
   { status: 'ARRIVED', label: 'Arrived', desc: 'Collector at your location' },
   { status: 'COLLECTING', label: 'Collecting', desc: 'Pick up in progress' },
   { status: 'COMPLETED', label: 'Completed', desc: 'Waste removed' },
-  { status: 'VALIDATED', label: 'Validated', desc: 'Confirmed by system' },
 ];
 export default function RequestDetail() {
   const { id } = useParams();
+  const [chatInput, setChatInput] = useState('');
+  const [mockMessages, setMockMessages] = useState([
+    { role: 'COLLECTOR', text: 'Halo, saya sudah dekat lokasi. Tolong sampahnya ditaruh di depan ya.', time: '10:05' }
+  ]);
   const { data: request, isLoading } = useQuery({
     queryKey: ['request', id],
     queryFn: () => api<Request>(`/api/requests/${id}`),
     enabled: !!id,
     refetchInterval: 5000,
   });
-  if (isLoading) return <AppLayout container><Skeleton className="h-[600px] w-full" /></AppLayout>;
+  const handleSendMessage = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    setMockMessages([...mockMessages, { role: 'RESIDENT', text: chatInput, time: format(new Date(), 'HH:mm') }]);
+    setChatInput('');
+  };
+  if (isLoading) return <AppLayout container><Skeleton className="h-[600px] w-full rounded-2xl" /></AppLayout>;
   if (!request) return <AppLayout container><div className="text-center py-20">Request not found</div></AppLayout>;
   const currentIdx = STATUS_STEPS.findIndex(s => s.status === request.status);
   return (
     <AppLayout container>
-      <div className="max-w-4xl mx-auto space-y-6">
-        <Button variant="ghost" asChild className="-ml-4">
-          <Link to="/dashboard"><ChevronLeft className="mr-2 h-4 w-4" /> Back to Dashboard</Link>
-        </Button>
-        <div className="flex flex-col md:flex-row justify-between items-start gap-4">
+      <div className="max-w-5xl mx-auto space-y-6">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild className="rounded-full">
+            <Link to="/dashboard"><ChevronLeft className="h-5 w-5" /></Link>
+          </Button>
           <div>
-            <h1 className="text-3xl font-bold">Request Detail</h1>
-            <p className="text-muted-foreground">ID: {request.id}</p>
+            <h1 className="text-2xl font-bold">Request Detail</h1>
+            <p className="text-sm text-muted-foreground font-mono">#{request.id.slice(0, 8)}</p>
           </div>
-          <Badge className="text-lg py-1 px-4" variant="outline">{request.status}</Badge>
+          <Badge className="ml-auto px-4 py-1 rounded-full uppercase tracking-widest text-[10px]" variant="secondary">
+            {request.status}
+          </Badge>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="md:col-span-2">
-            <CardHeader>
-              <CardTitle>Pickup Timeline</CardTitle>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2 shadow-sm">
+            <CardHeader className="border-b">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-emerald-600" /> Pickup Timeline
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+            <CardContent className="pt-6">
+              <div className="space-y-8">
                 {STATUS_STEPS.map((step, idx) => {
                   const isPast = idx < currentIdx;
                   const isCurrent = idx === currentIdx;
                   return (
-                    <div key={step.status} className="flex gap-4">
+                    <div key={step.status} className="flex gap-6">
                       <div className="flex flex-col items-center">
                         <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center border-2",
-                          isPast ? "bg-emerald-600 border-emerald-600 text-white" :
-                          isCurrent ? "bg-emerald-100 border-emerald-600 text-emerald-600 animate-pulse" :
-                          "bg-muted border-muted text-muted-foreground"
+                          "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-500",
+                          isPast ? "bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20" :
+                          isCurrent ? "bg-emerald-50 border-emerald-600 text-emerald-600 animate-pulse" :
+                          "bg-muted border-muted text-muted-foreground opacity-50"
                         )}>
-                          {isPast ? <CheckCircle2 size={16} /> : isCurrent ? <Clock size={16} /> : <Circle size={16} />}
+                          {isPast ? <CheckCircle2 size={20} /> : isCurrent ? <Clock size={20} /> : <Circle size={20} />}
                         </div>
                         {idx !== STATUS_STEPS.length - 1 && (
-                          <div className={cn("w-0.5 h-10 my-1", isPast ? "bg-emerald-600" : "bg-muted")} />
+                          <div className={cn("w-0.5 h-12 my-2 transition-colors duration-500", isPast ? "bg-emerald-600" : "bg-muted")} />
                         )}
                       </div>
-                      <div className="pt-0.5">
-                        <p className={cn("font-bold", isCurrent ? "text-emerald-700" : "text-foreground")}>{step.label}</p>
+                      <div className={cn("pt-1 transition-opacity", !isPast && !isCurrent && "opacity-50")}>
+                        <p className={cn("font-bold text-lg", isCurrent ? "text-emerald-700" : "text-foreground")}>{step.label}</p>
                         <p className="text-sm text-muted-foreground">{step.desc}</p>
                       </div>
                     </div>
@@ -81,59 +95,63 @@ export default function RequestDetail() {
             </CardContent>
           </Card>
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Info</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <Card className="shadow-sm">
+              <CardHeader className="border-b"><CardTitle className="text-base">Waste Information</CardTitle></CardHeader>
+              <CardContent className="pt-4 space-y-4">
                 <div className="flex items-center text-sm">
-                  <MapPin className="h-4 w-4 mr-2 text-emerald-600" />
-                  <span>{request.location.address}</span>
+                  <MapPin className="h-4 w-4 mr-3 text-emerald-600 shrink-0" />
+                  <span className="font-medium">{request.location.address}</span>
                 </div>
-                <div className="pt-2 border-t text-sm">
-                  <p className="text-muted-foreground">Waste Type</p>
-                  <p className="font-bold">{request.wasteType}</p>
-                </div>
-                <div className="pt-2 border-t text-sm">
-                  <p className="text-muted-foreground">Created At</p>
-                  <p className="font-bold">{format(request.createdAt, 'PPP HH:mm')}</p>
+                <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Type</p>
+                    <p className="font-bold text-emerald-700">{request.wasteType}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Weight</p>
+                    <p className="font-bold">{request.weightEstimate} kg</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Photos</CardTitle>
+            <Card className="shadow-sm">
+              <CardHeader className="border-b p-4">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <MessageSquare className="h-4 w-4" /> TPU Chat
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-2">
-                  {request.photos && request.photos.length > 0 ? (
-                    request.photos.map((p, i) => (
-                      <img key={i} src={p} className="w-full aspect-square object-cover rounded-md border" alt={`Waste ${i}`} />
-                    ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground col-span-2 italic">No photos attached</p>
-                  )}
+              <CardContent className="p-0">
+                <div className="h-64 bg-muted/10 p-4 overflow-y-auto space-y-4 flex flex-col">
+                  {mockMessages.map((msg, i) => (
+                    <div key={i} className={cn("flex gap-2 max-w-[85%]", msg.role === 'RESIDENT' ? "self-end flex-row-reverse" : "self-start")}>
+                      <Avatar className="h-8 w-8 shrink-0">
+                        <AvatarFallback className={msg.role === 'RESIDENT' ? 'bg-blue-100' : 'bg-emerald-100'}>
+                          {msg.role === 'RESIDENT' ? 'W' : 'T'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={cn("p-3 rounded-2xl text-sm shadow-sm", 
+                        msg.role === 'RESIDENT' ? "bg-emerald-600 text-white rounded-tr-none" : "bg-white border rounded-tl-none")}>
+                        {msg.text}
+                        <p className={cn("text-[10px] mt-1 text-right", msg.role === 'RESIDENT' ? "text-white/70" : "text-muted-foreground")}>{msg.time}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
+                <form onSubmit={handleSendMessage} className="p-3 border-t flex gap-2">
+                  <Input 
+                    placeholder="Message collector..." 
+                    className="rounded-full bg-muted border-none h-10 px-4" 
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                  />
+                  <Button size="icon" className="rounded-full shrink-0 h-10 w-10 bg-emerald-600">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
               </CardContent>
             </Card>
           </div>
         </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>TPU Chat (Mock)</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="h-48 bg-muted/30 rounded-lg p-4 flex flex-col justify-end">
-              <div className="bg-emerald-600 text-white p-2 rounded-lg self-end max-w-[80%] text-sm">
-                Halo, saya sudah dekat lokasi.
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <Input placeholder="Type a message..." />
-              <Button size="icon"><Send className="h-4 w-4" /></Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
   );

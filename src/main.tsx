@@ -17,6 +17,7 @@ import WargaDashboard from '@/pages/WargaDashboard'
 import TpuWorkspace from '@/pages/TpuWorkspace'
 import TpuMap from '@/pages/TpuMap'
 import RequestDetail from '@/pages/RequestDetail'
+import LiveTracking from '@/pages/LiveTracking'
 import AdminCenter from '@/pages/AdminCenter'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
@@ -46,7 +47,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/history",
-    element: <WargaDashboard />, // Reusing dashboard filtered logic for now
+    element: <WargaDashboard />,
     errorElement: <RouteErrorBoundary />,
   },
   {
@@ -62,6 +63,11 @@ const router = createBrowserRouter([
   {
     path: "/request/:id",
     element: <RequestDetail />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/tracking/:id",
+    element: <LiveTracking />,
     errorElement: <RouteErrorBoundary />,
   },
   {
