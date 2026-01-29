@@ -1,75 +1,70 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, ChatBoardEntity } from "./entities";
+import { UserEntity, RequestEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-
+import type { Request as WasteRequest, UserRole } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
-  app.get('/api/test', (c) => c.json({ success: true, data: { name: 'CF Workers Demo' }}));
-
-  // USERS
+  // AUTH MOCK
+  app.post('/api/auth/login', async (c) => {
+    const { id } = (await c.req.json()) as { id: string };
+    const user = new UserEntity(c.env, id);
+    if (!await user.exists()) {
+      return bad(c, "User not found");
+    }
+    return ok(c, await user.getState());
+  });
+  // REQUESTS
+  app.get('/api/requests', async (c) => {
+    await RequestEntity.ensureSeed(c.env);
+    const userId = c.req.query('userId');
+    const role = c.req.query('role') as UserRole;
+    const { items } = await RequestEntity.list(c.env);
+    // Simple filter logic
+    let filtered = items;
+    if (role === 'WARGA' && userId) {
+      filtered = items.filter(r => r.userId === userId);
+    } else if (role === 'TPU') {
+      filtered = items.filter(r => r.status === 'PENDING' || r.collectorId === userId);
+    }
+    return ok(c, filtered);
+  });
+  app.post('/api/requests', async (c) => {
+    const body = (await c.req.json()) as Partial<WasteRequest>;
+    if (!body.userId || !body.wasteType) return bad(c, "Missing required fields");
+    const newRequest: WasteRequest = {
+      id: crypto.randomUUID(),
+      userId: body.userId,
+      status: 'PENDING',
+      wasteType: body.wasteType as any,
+      weightEstimate: body.weightEstimate || 0,
+      location: body.location || { lat: -6.2088, lng: 106.8456, address: "Jakarta" },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+    await RequestEntity.create(c.env, newRequest);
+    return ok(c, newRequest);
+  });
+  app.get('/api/requests/:id', async (c) => {
+    const req = new RequestEntity(c.env, c.req.param('id'));
+    if (!await req.exists()) return notFound(c);
+    return ok(c, await req.getState());
+  });
+  app.patch('/api/requests/:id/status', async (c) => {
+    const { status, collectorId } = (await c.req.json()) as { status: string, collectorId?: string };
+    const req = new RequestEntity(c.env, c.req.param('id'));
+    if (!await req.exists()) return notFound(c);
+    const updated = await req.mutate(s => ({
+      ...s,
+      status: status as any,
+      collectorId: collectorId || s.collectorId,
+      updatedAt: Date.now(),
+      completedAt: status === 'COMPLETED' ? Date.now() : s.completedAt
+    }));
+    return ok(c, updated);
+  });
+  // USERS (Admin/Dev)
   app.get('/api/users', async (c) => {
     await UserEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await UserEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
-  });
-
-  app.post('/api/users', async (c) => {
-    const { name } = (await c.req.json()) as { name?: string };
-    if (!name?.trim()) return bad(c, 'name required');
-    return ok(c, await UserEntity.create(c.env, { id: crypto.randomUUID(), name: name.trim() }));
-  });
-
-  // CHATS
-  app.get('/api/chats', async (c) => {
-    await ChatBoardEntity.ensureSeed(c.env);
-    const cq = c.req.query('cursor');
-    const lq = c.req.query('limit');
-    const page = await ChatBoardEntity.list(c.env, cq ?? null, lq ? Math.max(1, (Number(lq) | 0)) : undefined);
-    return ok(c, page);
-  });
-
-  app.post('/api/chats', async (c) => {
-    const { title } = (await c.req.json()) as { title?: string };
-    if (!title?.trim()) return bad(c, 'title required');
-    const created = await ChatBoardEntity.create(c.env, { id: crypto.randomUUID(), title: title.trim(), messages: [] });
-    return ok(c, { id: created.id, title: created.title });
-  });
-
-  // MESSAGES
-  app.get('/api/chats/:chatId/messages', async (c) => {
-    const chat = new ChatBoardEntity(c.env, c.req.param('chatId'));
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.listMessages());
-  });
-
-  app.post('/api/chats/:chatId/messages', async (c) => {
-    const chatId = c.req.param('chatId');
-    const { userId, text } = (await c.req.json()) as { userId?: string; text?: string };
-    if (!isStr(userId) || !text?.trim()) return bad(c, 'userId and text required');
-    const chat = new ChatBoardEntity(c.env, chatId);
-    if (!await chat.exists()) return notFound(c, 'chat not found');
-    return ok(c, await chat.sendMessage(userId, text.trim()));
-  });
-
-  // DELETE: Users
-  app.delete('/api/users/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await UserEntity.delete(c.env, c.req.param('id')) }));
-
-  app.post('/api/users/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await UserEntity.deleteMany(c.env, list), ids: list });
-  });
-
-  // DELETE: Chats
-  app.delete('/api/chats/:id', async (c) => ok(c, { id: c.req.param('id'), deleted: await ChatBoardEntity.delete(c.env, c.req.param('id')) }));
-
-  app.post('/api/chats/deleteMany', async (c) => {
-    const { ids } = (await c.req.json()) as { ids?: string[] };
-    const list = ids?.filter(isStr) ?? [];
-    if (list.length === 0) return bad(c, 'ids required');
-    return ok(c, { deletedCount: await ChatBoardEntity.deleteMany(c.env, list), ids: list });
+    return ok(c, await UserEntity.list(c.env));
   });
 }

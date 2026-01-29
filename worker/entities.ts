@@ -1,41 +1,48 @@
-/**
- * Minimal real-world demo: One Durable Object instance per entity (User, ChatBoard), with Indexes for listing.
- */
 import { IndexedEntity } from "./core-utils";
-import type { User, Chat, ChatMessage } from "@shared/types";
-import { MOCK_CHAT_MESSAGES, MOCK_CHATS, MOCK_USERS } from "@shared/mock-data";
-
-// USER ENTITY: one DO instance per user
+import type { User, Request, TrackingUpdate, Notification } from "@shared/types";
+import { MOCK_USERS, MOCK_REQUESTS } from "@shared/mock-data";
 export class UserEntity extends IndexedEntity<User> {
   static readonly entityName = "user";
   static readonly indexName = "users";
-  static readonly initialState: User = { id: "", name: "" };
+  static readonly initialState: User = { id: "", name: "", role: "WARGA" };
   static seedData = MOCK_USERS;
 }
-
-// CHAT BOARD ENTITY: one DO instance per chat board, stores its own messages
-export type ChatBoardState = Chat & { messages: ChatMessage[] };
-
-const SEED_CHAT_BOARDS: ChatBoardState[] = MOCK_CHATS.map(c => ({
-  ...c,
-  messages: MOCK_CHAT_MESSAGES.filter(m => m.chatId === c.id),
-}));
-
-export class ChatBoardEntity extends IndexedEntity<ChatBoardState> {
-  static readonly entityName = "chat";
-  static readonly indexName = "chats";
-  static readonly initialState: ChatBoardState = { id: "", title: "", messages: [] };
-  static seedData = SEED_CHAT_BOARDS;
-
-  async listMessages(): Promise<ChatMessage[]> {
-    const { messages } = await this.getState();
-    return messages;
-  }
-
-  async sendMessage(userId: string, text: string): Promise<ChatMessage> {
-    const msg: ChatMessage = { id: crypto.randomUUID(), chatId: this.id, userId, text, ts: Date.now() };
-    await this.mutate(s => ({ ...s, messages: [...s.messages, msg] }));
-    return msg;
-  }
+export class RequestEntity extends IndexedEntity<Request> {
+  static readonly entityName = "request";
+  static readonly indexName = "requests";
+  static readonly initialState: Request = {
+    id: "",
+    userId: "",
+    status: "PENDING",
+    wasteType: "ORGANIC",
+    weightEstimate: 0,
+    location: { lat: 0, lng: 0, address: "" },
+    createdAt: 0,
+    updatedAt: 0
+  };
+  static seedData = MOCK_REQUESTS;
 }
-
+export class TrackingEntity extends IndexedEntity<TrackingUpdate> {
+  static readonly entityName = "tracking";
+  static readonly indexName = "tracking_logs";
+  static readonly initialState: TrackingUpdate = {
+    requestId: "",
+    collectorId: "",
+    lat: 0,
+    lng: 0,
+    timestamp: 0
+  };
+  // Tracking data usually doesn't need seeding
+}
+export class NotificationEntity extends IndexedEntity<Notification> {
+  static readonly entityName = "notification";
+  static readonly indexName = "notifications";
+  static readonly initialState: Notification = {
+    id: "",
+    userId: "",
+    title: "",
+    message: "",
+    read: false,
+    createdAt: 0
+  };
+}
