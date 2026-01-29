@@ -19,6 +19,7 @@ import TpuWorkspace from '@/pages/TpuWorkspace'
 import LiveTracking from '@/pages/LiveTracking'
 import AdminCenter from '@/pages/AdminCenter'
 import { Toaster } from '@/components/ui/sonner'
+import { ThemeProvider } from 'next-themes'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -67,10 +68,12 @@ const router = createBrowserRouter([
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <ErrorBoundary>
-        <RouterProvider router={router} />
-        <Toaster />
-      </ErrorBoundary>
+      <ThemeProvider attribute='class' defaultTheme='system' enableSystem>
+        <ErrorBoundary>
+          <RouterProvider router={router} />
+          <Toaster />
+        </ErrorBoundary>
+      </ThemeProvider>
     </QueryClientProvider>
   </StrictMode>,
 )
