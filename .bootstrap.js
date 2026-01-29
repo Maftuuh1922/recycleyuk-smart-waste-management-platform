@@ -78,7 +78,7 @@ function updateWranglerJsonc() {
 
 function runSetupCommands() {
     const commands = [
-    "bun add leaflet@^1.9.4",
+    "bun add leaflet@^1.9.4 react-leaflet@^4.2.1",
     "bun add react-leaflet@^4.2.1"
 ];
     
