@@ -1,16 +1,14 @@
 import { Hono } from "hono";
 import type { Env } from './core-utils';
-import { UserEntity, RequestEntity } from "./entities";
+import { UserEntity, RequestEntity, TrackingEntity } from "./entities";
 import { ok, bad, notFound, isStr } from './core-utils';
-import type { Request as WasteRequest, UserRole } from "@shared/types";
+import type { Request as WasteRequest, UserRole, TrackingUpdate } from "@shared/types";
 export function userRoutes(app: Hono<{ Bindings: Env }>) {
   // AUTH MOCK
   app.post('/api/auth/login', async (c) => {
     const { id } = (await c.req.json()) as { id: string };
     const user = new UserEntity(c.env, id);
-    if (!await user.exists()) {
-      return bad(c, "User not found");
-    }
+    if (!await user.exists()) return bad(c, "User not found");
     return ok(c, await user.getState());
   });
   // REQUESTS
@@ -19,14 +17,13 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     const userId = c.req.query('userId');
     const role = c.req.query('role') as UserRole;
     const { items } = await RequestEntity.list(c.env);
-    // Simple filter logic
     let filtered = items;
     if (role === 'WARGA' && userId) {
       filtered = items.filter(r => r.userId === userId);
     } else if (role === 'TPU') {
       filtered = items.filter(r => r.status === 'PENDING' || r.collectorId === userId);
     }
-    return ok(c, filtered);
+    return ok(c, filtered.sort((a, b) => b.createdAt - a.createdAt));
   });
   app.post('/api/requests', async (c) => {
     const body = (await c.req.json()) as Partial<WasteRequest>;
@@ -37,7 +34,7 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
       status: 'PENDING',
       wasteType: body.wasteType as any,
       weightEstimate: body.weightEstimate || 0,
-      location: body.location || { lat: -6.2088, lng: 106.8456, address: "Jakarta" },
+      location: body.location || { lat: -6.2247, lng: 106.8077, address: "RW 04 Area" },
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -62,9 +59,35 @@ export function userRoutes(app: Hono<{ Bindings: Env }>) {
     }));
     return ok(c, updated);
   });
-  // USERS (Admin/Dev)
-  app.get('/api/users', async (c) => {
-    await UserEntity.ensureSeed(c.env);
-    return ok(c, await UserEntity.list(c.env));
+  // TRACKING
+  app.get('/api/requests/:id/tracking', async (c) => {
+    const { items } = await TrackingEntity.list(c.env);
+    const filtered = items.filter(t => t.requestId === c.req.param('id'))
+      .sort((a, b) => a.timestamp - b.timestamp);
+    return ok(c, filtered);
+  });
+  app.post('/api/requests/:id/tracking', async (c) => {
+    const body = await c.req.json();
+    const update: TrackingUpdate = {
+      id: crypto.randomUUID(),
+      requestId: c.req.param('id'),
+      collectorId: body.collectorId,
+      lat: body.lat,
+      lng: body.lng,
+      timestamp: Date.now(),
+    };
+    await TrackingEntity.create(c.env, update);
+    return ok(c, update);
+  });
+  // ADMIN
+  app.get('/api/admin/stats', async (c) => {
+    const { items: requests } = await RequestEntity.list(c.env);
+    const distribution = [
+      { name: 'Organic', value: requests.filter(r => r.wasteType === 'ORGANIC').length },
+      { name: 'Non-Organic', value: requests.filter(r => r.wasteType === 'NON_ORGANIC').length },
+      { name: 'B3', value: requests.filter(r => r.wasteType === 'B3').length },
+      { name: 'Residue', value: requests.filter(r => r.wasteType === 'RESIDUE').length },
+    ];
+    return ok(c, { wasteDistribution: distribution, totalCount: requests.length });
   });
 }

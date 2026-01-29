@@ -8,7 +8,8 @@ import { RequestCard } from '@/components/RequestCard';
 import { NewRequestDialog } from '@/components/NewRequestDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Trash2, Clock, CheckCircle2 } from 'lucide-react';
+import { Plus, Clock, CheckCircle2, History as HistoryIcon, Navigation } from 'lucide-react';
+import { Link } from 'react-router-dom';
 export default function WargaDashboard() {
   const user = useAuthStore(s => s.user);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -22,7 +23,6 @@ export default function WargaDashboard() {
   return (
     <AppLayout container>
       <div className="space-y-8">
-        {/* Header Stats */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold">Welcome, {user?.name}</h1>
@@ -37,7 +37,6 @@ export default function WargaDashboard() {
           <StatCard title="Active Requests" value={activeRequests.length} icon={<Clock className="h-5 w-5 text-amber-500" />} />
           <StatCard title="Points Earned" value={(requests?.length ?? 0) * 50} icon={<div className="h-5 w-5 bg-amber-100 rounded-full flex items-center justify-center text-[10px] font-bold text-amber-600">P</div>} />
         </div>
-        {/* Active Pickups */}
         <section className="space-y-4">
           <h2 className="text-xl font-bold flex items-center gap-2">
             <Clock className="h-5 w-5 text-emerald-600" />
@@ -51,7 +50,15 @@ export default function WargaDashboard() {
           ) : activeRequests.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {activeRequests.map(req => (
-                <RequestCard key={req.id} request={req} />
+                <RequestCard key={req.id} request={req}>
+                  {(req.status === 'ON_THE_WAY' || req.status === 'ARRIVED') && (
+                    <Button asChild className="w-full bg-blue-600 hover:bg-blue-700 mt-2">
+                      <Link to={`/tracking/${req.id}`}>
+                        <Navigation className="mr-2 h-4 w-4" /> Track Live
+                      </Link>
+                    </Button>
+                  )}
+                </RequestCard>
               ))}
             </div>
           ) : (
@@ -61,11 +68,10 @@ export default function WargaDashboard() {
             </div>
           )}
         </section>
-        {/* History */}
         {completedRequests.length > 0 && (
           <section className="space-y-4">
             <h2 className="text-xl font-bold flex items-center gap-2 text-muted-foreground">
-              <History className="h-5 w-5" />
+              <HistoryIcon className="h-5 w-5" />
               Recent History
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 opacity-70 grayscale-[0.5]">
@@ -75,13 +81,13 @@ export default function WargaDashboard() {
             </div>
           </section>
         )}
-        <NewRequestDialog 
-          open={isDialogOpen} 
-          onOpenChange={setIsDialogOpen} 
+        <NewRequestDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
           onSuccess={() => {
             refetch();
             setIsDialogOpen(false);
-          }} 
+          }}
         />
       </div>
     </AppLayout>

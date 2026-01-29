@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useAuthStore } from '@/lib/store';
@@ -40,8 +40,28 @@ export default function TpuWorkspace() {
       toast.success(`Status updated to ${data.status}`);
     }
   });
+  const simulateMovement = useMutation({
+    mutationFn: (id: string) =>
+      api(`/api/requests/${id}/tracking`, {
+        method: 'POST',
+        body: JSON.stringify({
+          lat: -6.22 + (Math.random() * 0.01),
+          lng: 106.81 + (Math.random() * 0.01),
+          collectorId: user?.id
+        })
+      })
+  });
   const availableJobs = requests?.filter(r => r.status === 'PENDING') ?? [];
   const myTasks = requests?.filter(r => r.collectorId === user?.id && r.status !== 'COMPLETED') ?? [];
+  // Simulate tracking for any active OTW job
+  useEffect(() => {
+    const otwJob = myTasks.find(t => t.status === 'ON_THE_WAY');
+    if (!otwJob) return;
+    const interval = setInterval(() => {
+      simulateMovement.mutate(otwJob.id);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [myTasks, user?.id]);
   return (
     <AppLayout container>
       <div className="space-y-8">
@@ -65,7 +85,7 @@ export default function TpuWorkspace() {
                 {availableJobs.map(req => (
                   <RequestCard key={req.id} request={req}>
                     <Button 
-                      className="w-full bg-emerald-600 hover:bg-emerald-700 mt-4" 
+                      className="w-full bg-emerald-600 hover:bg-emerald-700 mt-4"
                       onClick={() => acceptJob.mutate(req.id)}
                       disabled={acceptJob.isPending}
                     >
@@ -100,10 +120,10 @@ export default function TpuWorkspace() {
                       {req.status === 'ON_THE_WAY' && (
                         <Button 
                           variant="outline" 
-                          className="w-full"
+                          className="w-full border-blue-200 text-blue-700 bg-blue-50"
                           onClick={() => updateStatus.mutate({ id: req.id, status: 'ARRIVED' })}
                         >
-                          <MapPin className="mr-2 h-4 w-4" /> Arrived
+                          <MapPin className="mr-2 h-4 w-4" /> Mark Arrived
                         </Button>
                       )}
                       {(req.status === 'ARRIVED' || req.status === 'COLLECTING') && (
@@ -111,11 +131,11 @@ export default function TpuWorkspace() {
                           className="w-full bg-emerald-600 hover:bg-emerald-700"
                           onClick={() => updateStatus.mutate({ id: req.id, status: 'COMPLETED' })}
                         >
-                          <CheckCircle className="mr-2 h-4 w-4" /> Done
+                          <CheckCircle className="mr-2 h-4 w-4" /> Finish
                         </Button>
                       )}
                       <Button variant="ghost" className="w-full" onClick={() => window.open(`https://www.google.com/maps?q=${req.location.lat},${req.location.lng}`)}>
-                        Navigate
+                        Nav
                       </Button>
                     </div>
                   </RequestCard>

@@ -15,6 +15,8 @@ import { HomePage } from '@/pages/HomePage'
 import { AuthPage } from '@/pages/AuthPage'
 import WargaDashboard from '@/pages/WargaDashboard'
 import TpuWorkspace from '@/pages/TpuWorkspace'
+import LiveTracking from '@/pages/LiveTracking'
+import AdminCenter from '@/pages/AdminCenter'
 import { Toaster } from '@/components/ui/sonner'
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -46,8 +48,13 @@ const router = createBrowserRouter([
     errorElement: <RouteErrorBoundary />,
   },
   {
+    path: "/tracking/:id",
+    element: <LiveTracking />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
     path: "/admin",
-    element: <div className="p-8">Admin Center Placeholder</div>,
+    element: <AdminCenter />,
     errorElement: <RouteErrorBoundary />,
   }
 ]);

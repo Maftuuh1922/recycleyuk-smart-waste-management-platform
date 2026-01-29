@@ -2,12 +2,12 @@ import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -31,9 +31,10 @@ import { useAuthStore } from '@/lib/store';
 import { toast } from 'sonner';
 const formSchema = z.object({
   wasteType: z.enum(['ORGANIC', 'NON_ORGANIC', 'B3', 'RESIDUE']),
-  weightEstimate: z.string().transform((v) => parseFloat(v)).pipe(z.number().positive()),
-  address: z.string().min(5),
+  weightEstimate: z.number().positive("Weight must be greater than 0"),
+  address: z.string().min(5, "Address must be at least 5 characters"),
 });
+type FormValues = z.infer<typeof formSchema>;
 interface NewRequestDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,15 +42,15 @@ interface NewRequestDialogProps {
 }
 export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDialogProps) {
   const user = useAuthStore(s => s.user);
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       wasteType: 'ORGANIC',
-      weightEstimate: 1 as any,
+      weightEstimate: 1,
       address: user?.address || '',
     },
   });
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormValues) {
     try {
       await api('/api/requests', {
         method: 'POST',
@@ -58,8 +59,8 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
           wasteType: values.wasteType,
           weightEstimate: values.weightEstimate,
           location: {
-            lat: -6.2088,
-            lng: 106.8456,
+            lat: -6.2247,
+            lng: 106.8077,
             address: values.address
           }
         }),
@@ -112,7 +113,12 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
                 <FormItem>
                   <FormLabel>Estimated Weight (kg)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.5" {...field} />
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      {...field} 
+                      onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)} 
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -132,8 +138,8 @@ export function NewRequestDialog({ open, onOpenChange, onSuccess }: NewRequestDi
               )}
             />
             <div className="pt-4 flex justify-end">
-              <Button type="submit" className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
-                Submit Request
+              <Button type="submit" disabled={form.formState.isSubmitting} className="bg-emerald-600 hover:bg-emerald-700 w-full sm:w-auto">
+                {form.formState.isSubmitting ? "Submitting..." : "Submit Request"}
               </Button>
             </div>
           </form>

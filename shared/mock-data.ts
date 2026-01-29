@@ -1,4 +1,4 @@
-import type { User, Request, Chat, ChatMessage } from './types';
+import type { User, Request, Chat, ChatMessage, TrackingUpdate } from './types';
 export const MOCK_USERS: User[] = [
   { id: 'warga-1', name: 'Budi Santoso', role: 'WARGA', address: 'Blok A No. 12, RW 04' },
   { id: 'warga-2', name: 'Siti Aminah', role: 'WARGA', address: 'Blok C No. 05, RW 04' },
@@ -20,7 +20,7 @@ export const MOCK_REQUESTS: Request[] = [
     id: 'req-2',
     userId: 'warga-2',
     collectorId: 'tpu-1',
-    status: 'ACCEPTED',
+    status: 'ON_THE_WAY',
     wasteType: 'NON_ORGANIC',
     weightEstimate: 5.0,
     location: { lat: -6.2230, lng: 106.8100, address: 'Blok C No. 05, RW 04' },
@@ -28,7 +28,16 @@ export const MOCK_REQUESTS: Request[] = [
     updatedAt: Date.now() - 1800000,
   }
 ];
-// Compatibility exports
+export const MOCK_TRACKING_UPDATES: TrackingUpdate[] = [
+  {
+    id: 'tr-1',
+    requestId: 'req-2',
+    collectorId: 'tpu-1',
+    lat: -6.2210,
+    lng: 106.8090,
+    timestamp: Date.now() - 300000,
+  }
+];
 export const MOCK_CHATS: Chat[] = [{ id: 'c1', title: 'RW 04 Group' }];
 export const MOCK_CHAT_MESSAGES: ChatMessage[] = [
   { id: 'm1', chatId: 'c1', userId: 'warga-1', text: 'Kapan jadwal sampah plastik minggu ini?', ts: Date.now() },
