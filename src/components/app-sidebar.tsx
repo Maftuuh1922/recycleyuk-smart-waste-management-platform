@@ -3,12 +3,13 @@ import {
   LayoutDashboard,
   Truck,
   History,
-  PlusCircle,
   BarChart3,
   Users,
   LogOut,
   Recycle,
-  Map as MapIcon
+  Map as MapIcon,
+  ShieldCheck,
+  FileText
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/lib/store";
@@ -46,10 +47,15 @@ export function AppSidebar(): JSX.Element {
         { title: "Earnings", icon: BarChart3, url: "/workspace" },
       ];
     }
-    return [
-      { title: "Command Center", icon: BarChart3, url: "/admin" },
-      { title: "Users", icon: Users, url: "/admin" },
-    ];
+    if (user?.role === 'ADMIN') {
+      return [
+        { title: "Command Dashboard", icon: LayoutDashboard, url: "/admin/dashboard" },
+        { title: "Member Management", icon: Users, url: "/admin/users" },
+        { title: "TPU Logistics", icon: Truck, url: "/admin/tpu" },
+        { title: "Reports & Analytics", icon: FileText, url: "/admin/reports" },
+      ];
+    }
+    return [];
   };
   const menuItems = getMenuItems();
   return (
@@ -68,7 +74,7 @@ export function AppSidebar(): JSX.Element {
       <SidebarSeparator />
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Menu Navigation</SidebarGroupLabel>
           <SidebarMenu>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.title}>
@@ -87,7 +93,10 @@ export function AppSidebar(): JSX.Element {
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs font-medium truncate max-w-[120px]">{user?.name}</span>
-            <span className="text-[10px] text-muted-foreground uppercase">{user?.role}</span>
+            <span className="text-[10px] text-muted-foreground uppercase flex items-center gap-1">
+              <ShieldCheck className="h-2.5 w-2.5" />
+              {user?.role}
+            </span>
           </div>
           <button
             onClick={handleLogout}

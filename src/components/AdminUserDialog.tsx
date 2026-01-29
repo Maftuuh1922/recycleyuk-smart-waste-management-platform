@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { User, UserRole } from '@shared/types';
+import { User } from '@shared/types';
 import { api } from '@/lib/api-client';
 import { toast } from 'sonner';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,8 +16,8 @@ const formSchema = z.object({
   id: z.string().min(1, "ID is required"),
   name: z.string().min(3, "Name must be at least 3 characters"),
   role: z.enum(['WARGA', 'TPU', 'ADMIN'] as const),
-  phone: z.string().optional().default(''),
-  address: z.string().optional().default(''),
+  phone: z.string().default(''),
+  address: z.string().default(''),
   isOnline: z.boolean().default(false),
 });
 type FormValues = z.infer<typeof formSchema>;
@@ -62,7 +62,7 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
       }
     }
   }, [user, form, open]);
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
       const method = user ? 'PATCH' : 'POST';
       const url = user ? `/api/users/${user.id}` : `/api/users`;

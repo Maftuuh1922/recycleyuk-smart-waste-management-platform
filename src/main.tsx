@@ -19,6 +19,10 @@ import TpuMap from '@/pages/TpuMap'
 import RequestDetail from '@/pages/RequestDetail'
 import LiveTracking from '@/pages/LiveTracking'
 import AdminCenter from '@/pages/AdminCenter'
+import AdminDashboard from '@/pages/AdminDashboard'
+import AdminUsers from '@/pages/AdminUsers'
+import AdminTpu from '@/pages/AdminTpu'
+import AdminReports from '@/pages/AdminReports'
 import { Toaster } from '@/components/ui/sonner'
 import { ThemeProvider } from 'next-themes'
 const queryClient = new QueryClient({
@@ -73,6 +77,26 @@ const router = createBrowserRouter([
   {
     path: "/admin",
     element: <AdminCenter />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin/dashboard",
+    element: <AdminDashboard />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin/users",
+    element: <AdminUsers />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin/tpu",
+    element: <AdminTpu />,
+    errorElement: <RouteErrorBoundary />,
+  },
+  {
+    path: "/admin/reports",
+    element: <AdminReports />,
     errorElement: <RouteErrorBoundary />,
   }
 ]);
