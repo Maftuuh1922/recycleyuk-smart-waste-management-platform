@@ -15,10 +15,10 @@ import { useQueryClient } from '@tanstack/react-query';
 const formSchema = z.object({
   id: z.string().min(1, "ID is required"),
   name: z.string().min(3, "Name must be at least 3 characters"),
-  role: z.enum(['WARGA', 'TPU', 'ADMIN'] as const),
-  phone: z.string().default(''),
-  address: z.string().default(''),
-  isOnline: z.boolean().default(false),
+  role: z.enum(['WARGA', 'TPU', 'ADMIN']),
+  phone: z.string(),
+  address: z.string(),
+  isOnline: z.boolean(),
 });
 type FormValues = z.infer<typeof formSchema>;
 interface AdminUserDialogProps {
@@ -39,19 +39,20 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
       isOnline: false,
     },
   });
+  const { reset, handleSubmit, control, formState } = form;
   useEffect(() => {
     if (open) {
       if (user) {
-        form.reset({
-          id: user.id,
-          name: user.name,
-          role: user.role,
+        reset({
+          id: user.id || '',
+          name: user.name || '',
+          role: (user.role as 'WARGA' | 'TPU' | 'ADMIN') || 'WARGA',
           phone: user.phone || '',
           address: user.address || '',
           isOnline: !!user.isOnline,
         });
       } else {
-        form.reset({
+        reset({
           id: `user-${Math.floor(Math.random() * 10000)}`,
           name: '',
           role: 'WARGA',
@@ -61,7 +62,7 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
         });
       }
     }
-  }, [user, form, open]);
+  }, [user, reset, open]);
   const onSubmit: SubmitHandler<FormValues> = async (values) => {
     try {
       const method = user ? 'PATCH' : 'POST';
@@ -85,57 +86,99 @@ export function AdminUserDialog({ open, onOpenChange, user }: AdminUserDialogPro
           <DialogTitle>{user ? 'Edit Member' : 'Add New Member'}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField control={form.control} name="id" render={({ field }) => (
-              <FormItem>
-                <FormLabel>User ID</FormLabel>
-                <FormControl><Input {...field} disabled={!!user} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="name" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl><Input placeholder="John Doe" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <FormField 
+              control={control} 
+              name="id" 
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>User ID</FormLabel>
+                  <FormControl>
+                    <Input {...field} disabled={!!user} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} 
+            />
+            <FormField 
+              control={control} 
+              name="name" 
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} 
+            />
             <div className="grid grid-cols-2 gap-4">
-              <FormField control={form.control} name="role" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                    <SelectContent>
-                      <SelectItem value="WARGA">Resident</SelectItem>
-                      <SelectItem value="TPU">Collector</SelectItem>
-                      <SelectItem value="ADMIN">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )} />
-              <FormField control={form.control} name="phone" render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Phone</FormLabel>
-                  <FormControl><Input placeholder="081..." {...field} /></FormControl>
-                </FormItem>
-              )} />
+              <FormField 
+                control={control} 
+                name="role" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Role</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="WARGA">Resident</SelectItem>
+                        <SelectItem value="TPU">Collector</SelectItem>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} 
+              />
+              <FormField 
+                control={control} 
+                name="phone" 
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Phone</FormLabel>
+                    <FormControl>
+                      <Input placeholder="081..." {...field} />
+                    </FormControl>
+                  </FormItem>
+                )} 
+              />
             </div>
-            <FormField control={form.control} name="address" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl><Input placeholder="Blok X No. Y" {...field} /></FormControl>
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="isOnline" render={({ field }) => (
-              <FormItem className="flex items-center justify-between rounded-lg border p-3">
-                <FormLabel className="text-sm font-medium">Online Status</FormLabel>
-                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-              </FormItem>
-            )} />
+            <FormField 
+              control={control} 
+              name="address" 
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Blok X No. Y" {...field} />
+                  </FormControl>
+                </FormItem>
+              )} 
+            />
+            <FormField 
+              control={control} 
+              name="isOnline" 
+              render={({ field }) => (
+                <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                  <FormLabel className="text-sm font-medium">Online Status</FormLabel>
+                  <FormControl>
+                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                  </FormControl>
+                </FormItem>
+              )} 
+            />
             <DialogFooter className="pt-4">
-              <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : "Save User"}
+              <Button 
+                type="submit" 
+                className="w-full bg-emerald-600 hover:bg-emerald-700" 
+                disabled={formState.isSubmitting}
+              >
+                {formState.isSubmitting ? "Saving..." : "Save User"}
               </Button>
             </DialogFooter>
           </form>
