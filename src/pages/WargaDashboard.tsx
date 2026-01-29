@@ -17,6 +17,7 @@ export default function WargaDashboard() {
     queryKey: ['requests', user?.id],
     queryFn: () => api<Request[]>(`/api/requests?userId=${user?.id}&role=WARGA`),
     enabled: !!user?.id,
+    refetchInterval: 10000,
   });
   const activeRequests = requests?.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED' && r.status !== 'VALIDATED') ?? [];
   const completedRequests = requests?.filter(r => r.status === 'COMPLETED' || r.status === 'CANCELLED' || r.status === 'VALIDATED') ?? [];

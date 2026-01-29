@@ -18,6 +18,7 @@ export default function TpuWorkspace() {
     queryKey: ['tpu-jobs', user?.id],
     queryFn: () => api<Request[]>(`/api/requests?userId=${user?.id}&role=TPU`),
     enabled: !!user?.id,
+    refetchInterval: 5000,
   });
   const updateStatus = useMutation({
     mutationFn: ({ id, status }: { id: string, status: string }) =>
@@ -26,7 +27,7 @@ export default function TpuWorkspace() {
         body: JSON.stringify({ status, collectorId: user?.id })
       }),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['tpu-jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['tpu-jobs', user?.id] });
       if (variables.status === 'COMPLETED') {
         toast.success("Job finished! WhatsApp notification sent to resident.");
       } else {
@@ -73,17 +74,17 @@ export default function TpuWorkspace() {
                   <RequestCard key={req.id} request={req}>
                     <div className="flex gap-2 mt-4">
                       {req.status === 'ACCEPTED' && (
-                        <Button className="flex-1" onClick={() => updateStatus.mutate({ id: req.id, status: 'ON_THE_WAY' })}>
+                        <Button className="flex-1" onClick={() => updateStatus.mutate({ id: req.id, status: 'ON_THE_WAY' })} disabled={updateStatus.isPending}>
                           <Truck className="mr-2 h-4 w-4" /> Start OTW
                         </Button>
                       )}
                       {req.status === 'ON_THE_WAY' && (
-                        <Button className="flex-1" variant="outline" onClick={() => updateStatus.mutate({ id: req.id, status: 'ARRIVED' })}>
+                        <Button className="flex-1" variant="outline" onClick={() => updateStatus.mutate({ id: req.id, status: 'ARRIVED' })} disabled={updateStatus.isPending}>
                           <MapPin className="mr-2 h-4 w-4" /> Mark Arrived
                         </Button>
                       )}
                       {req.status === 'ARRIVED' && (
-                        <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => updateStatus.mutate({ id: req.id, status: 'COMPLETED' })}>
+                        <Button className="flex-1 bg-emerald-600 hover:bg-emerald-700" onClick={() => updateStatus.mutate({ id: req.id, status: 'COMPLETED' })} disabled={updateStatus.isPending}>
                           <CheckCircle className="mr-2 h-4 w-4" /> Finish Pickup
                         </Button>
                       )}
