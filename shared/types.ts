@@ -18,6 +18,8 @@ export interface Request {
   id: string;
   userId: string;
   collectorId?: string;
+  collectorName?: string;
+  collectorPhone?: string;
   status: RequestStatus;
   wasteType: WasteType;
   weightEstimate: number; // in kg

@@ -3,6 +3,8 @@ export const MOCK_USERS: User[] = [
   { id: 'warga-1', name: 'Budi Santoso', role: 'WARGA', address: 'Blok A No. 12, RW 04', isOnline: false },
   { id: 'warga-2', name: 'Siti Aminah', role: 'WARGA', address: 'Blok C No. 05, RW 04', isOnline: false },
   { id: 'tpu-1', name: 'Anto Wijaya', role: 'TPU', phone: '08123456789', isOnline: true },
+  { id: 'tpu-2', name: 'Bambang Kusuma', role: 'TPU', phone: '08129998887', isOnline: true },
+  { id: 'tpu-3', name: 'Dedi Sunardi', role: 'TPU', phone: '08137776665', isOnline: false },
   { id: 'admin-1', name: 'Pak RW 04', role: 'ADMIN', isOnline: true }
 ];
 export const MOCK_REQUESTS: Request[] = [
@@ -29,6 +31,17 @@ export const MOCK_REQUESTS: Request[] = [
     createdAt: Date.now() - 7200000,
     updatedAt: Date.now() - 1800000,
     estimatedArrival: new Date(Date.now() + 1800000).toISOString()
+  },
+  {
+    id: 'req-3',
+    userId: 'warga-1',
+    status: 'PENDING',
+    wasteType: 'B3',
+    weightEstimate: 1.2,
+    location: { lat: -6.2260, lng: 106.8080, address: 'Blok B No. 22, RW 04' },
+    photos: [],
+    createdAt: Date.now() - 1800000,
+    updatedAt: Date.now() - 1800000,
   }
 ];
 export const MOCK_CHATS: Chat[] = [{ id: 'c1', title: 'RW 04 Group' }];

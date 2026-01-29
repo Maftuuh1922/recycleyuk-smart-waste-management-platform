@@ -10,9 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CheckCircle2, Circle, Clock, ChevronLeft, MapPin, Send, MessageSquare, Loader2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, ChevronLeft, MapPin, Send, MessageSquare, Loader2, Phone, Truck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 const STATUS_STEPS: { status: RequestStatus; label: string; desc: string }[] = [
   { status: 'PENDING', label: 'Requested', desc: 'Waiting for a collector' },
   { status: 'ACCEPTED', label: 'Accepted', desc: 'Collector assigned' },
@@ -31,13 +32,19 @@ export default function RequestDetail() {
     queryKey: ['request', id],
     queryFn: () => api<Request>(`/api/requests/${id}`),
     enabled: !!id,
-    refetchInterval: 3000, // Near-realtime status tracking
+    refetchInterval: 3000,
   });
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
     setMockMessages([...mockMessages, { role: 'RESIDENT', text: chatInput, time: format(new Date(), 'HH:mm') }]);
     setChatInput('');
+  };
+  const handleCall = () => {
+    toast(`Dialing ${request?.collectorName}...`, {
+      description: `Connecting you to ${request?.collectorPhone}`,
+      icon: <Phone className="h-4 w-4" />
+    });
   };
   if (isLoading) return <AppLayout container><Skeleton className="h-[600px] w-full rounded-2xl" /></AppLayout>;
   if (!request) return <AppLayout container><div className="text-center py-20">Request not found</div></AppLayout>;
@@ -109,7 +116,7 @@ export default function RequestDetail() {
                           <p className="text-sm text-muted-foreground mt-1">{step.desc}</p>
                           {isCurrent && (
                             <Badge variant="outline" className="mt-2 text-[9px] bg-emerald-50 text-emerald-700 border-emerald-100">
-                              CURRENT STATUS
+                              {request.collectorName ? `ASSIGNED TO ${request.collectorName.toUpperCase()}` : "SEARCHING FOR COLLECTOR"}
                             </Badge>
                           )}
                         </div>
@@ -121,6 +128,32 @@ export default function RequestDetail() {
             </CardContent>
           </Card>
           <div className="space-y-6">
+            {request.collectorName && (
+              <Card className="shadow-lg border-emerald-200 bg-emerald-50/20 rounded-2xl overflow-hidden animate-in fade-in duration-500">
+                <CardHeader className="p-4 border-b border-emerald-100">
+                  <CardTitle className="text-xs font-black uppercase tracking-widest text-emerald-800">Assigned Collector</CardTitle>
+                </CardHeader>
+                <CardContent className="p-5 space-y-4">
+                  <div className="flex items-center gap-4">
+                    <Avatar className="h-12 w-12 border-2 border-emerald-500">
+                      <AvatarFallback className="bg-emerald-600 text-white font-bold">{request.collectorName[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-bold text-lg leading-tight">{request.collectorName}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">ID: {request.collectorId?.slice(0, 6)}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" size="sm" className="rounded-full bg-white border-emerald-200 hover:bg-emerald-50 text-emerald-700" onClick={handleCall}>
+                      <Phone size={14} className="mr-2" /> Call
+                    </Button>
+                    <Button variant="outline" size="sm" className="rounded-full bg-white border-emerald-200 hover:bg-emerald-50 text-emerald-700" asChild>
+                      <a href={`tel:${request.collectorPhone}`}><MessageSquare size={14} className="mr-2" /> SMS</a>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
             <Card className="shadow-sm rounded-2xl overflow-hidden border-emerald-50">
               <CardHeader className="border-b bg-muted/5">
                 <CardTitle className="text-sm font-bold uppercase tracking-widest">Waste Info</CardTitle>
@@ -136,9 +169,7 @@ export default function RequestDetail() {
                 <div className="grid grid-cols-2 gap-4 pt-5 border-t border-dashed">
                   <div>
                     <p className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.15em] mb-1">Type</p>
-                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-none font-bold">
-                      {request.wasteType}
-                    </Badge>
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-none font-bold">{request.wasteType}</Badge>
                   </div>
                   <div>
                     <p className="text-[9px] text-muted-foreground uppercase font-black tracking-[0.15em] mb-1">Estimate</p>
@@ -147,7 +178,7 @@ export default function RequestDetail() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="shadow-sm rounded-2xl overflow-hidden border-emerald-50 flex flex-col h-[400px]">
+            <Card className="shadow-sm rounded-2xl overflow-hidden border-emerald-50 flex flex-col h-[350px]">
               <CardHeader className="border-b p-4 bg-muted/5">
                 <CardTitle className="text-sm font-bold flex items-center gap-2">
                   <MessageSquare className="h-4 w-4 text-emerald-600" /> Collector Chat
@@ -157,29 +188,16 @@ export default function RequestDetail() {
                 <div className="flex-1 bg-muted/10 p-4 overflow-y-auto space-y-4 flex flex-col">
                   {mockMessages.map((msg, i) => (
                     <div key={i} className={cn("flex gap-2 max-w-[85%]", msg.role === 'RESIDENT' ? "self-end flex-row-reverse" : "self-start")}>
-                      <Avatar className="h-7 w-7 shrink-0 shadow-sm">
-                        <AvatarFallback className={cn("text-[10px] font-bold", msg.role === 'RESIDENT' ? 'bg-blue-600 text-white' : 'bg-emerald-600 text-white')}>
-                          {msg.role === 'RESIDENT' ? 'YOU' : 'TPU'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className={cn("p-3 rounded-2xl text-sm shadow-sm transition-all duration-300",
-                        msg.role === 'RESIDENT' ? "bg-emerald-600 text-white rounded-tr-none animate-in slide-in-from-right-2" : "bg-white border rounded-tl-none animate-in slide-in-from-left-2")}>
+                      <div className={cn("p-3 rounded-2xl text-sm shadow-sm", msg.role === 'RESIDENT' ? "bg-emerald-600 text-white rounded-tr-none" : "bg-white border rounded-tl-none")}>
                         {msg.text}
-                        <p className={cn("text-[9px] mt-1 text-right font-medium", msg.role === 'RESIDENT' ? "text-white/60" : "text-muted-foreground/60")}>{msg.time}</p>
+                        <p className={cn("text-[9px] mt-1 text-right", msg.role === 'RESIDENT' ? "text-white/60" : "text-muted-foreground/60")}>{msg.time}</p>
                       </div>
                     </div>
                   ))}
                 </div>
                 <form onSubmit={handleSendMessage} className="p-3 border-t bg-white flex gap-2">
-                  <Input
-                    placeholder="Message..."
-                    className="rounded-full bg-muted/50 border-none h-10 px-4 focus-visible:ring-emerald-500"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                  />
-                  <Button size="icon" className="rounded-full shrink-0 h-10 w-10 bg-emerald-600 hover:bg-emerald-700 shadow-md active:scale-95 transition-all">
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  <Input placeholder="Message..." className="rounded-full bg-muted/50 border-none h-10 px-4" value={chatInput} onChange={(e) => setChatInput(e.target.value)} />
+                  <Button size="icon" className="rounded-full h-10 w-10 bg-emerald-600 hover:bg-emerald-700"><Send size={16} /></Button>
                 </form>
               </CardContent>
             </Card>

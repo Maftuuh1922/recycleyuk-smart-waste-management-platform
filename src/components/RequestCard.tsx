@@ -2,7 +2,7 @@ import React from 'react';
 import { Request, WasteType, RequestStatus } from '@shared/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Scale, Clock, Trash2, Leaf, AlertTriangle, Package, CheckCircle2 } from 'lucide-react';
+import { MapPin, Scale, Clock, Trash2, Leaf, AlertTriangle, Package, CheckCircle2, Truck, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 interface RequestCardProps {
@@ -50,6 +50,14 @@ export function RequestCard({ request, children }: RequestCardProps) {
           <MapPin className="h-4 w-4 mr-2 text-emerald-600 shrink-0 mt-0.5" />
           <span className="line-clamp-2">{request.location.address}</span>
         </div>
+        {request.collectorName && request.status !== 'PENDING' && (
+          <div className="flex items-center gap-2 p-2 bg-emerald-50 rounded-lg border border-emerald-100 animate-in fade-in slide-in-from-left-1">
+            <Truck size={14} className="text-emerald-600" />
+            <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-tight">
+              Assigned: {request.collectorName}
+            </span>
+          </div>
+        )}
         <div className="flex items-center justify-between pt-2">
           <div className="flex items-center text-sm font-bold bg-muted/30 px-2 py-1 rounded-md">
             <Scale className="h-3.5 w-3.5 mr-2 text-emerald-600" />
